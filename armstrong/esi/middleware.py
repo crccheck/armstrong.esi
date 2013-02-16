@@ -6,7 +6,7 @@ from django.core.cache import cache
 from django.http import HttpResponse
 
 from .utils import replace_esi_tags, gzip_response_content, \
-    gunzip_response_content
+    gunzip_response_content, dummy_replace_esi_tags
 
 
 esi_tag_re = re.compile(r'<esi:include src="(?P<url>[^"]+?)"\s*/>', re.I)
@@ -55,7 +55,7 @@ class DummyEsiMiddleware(object):
         if is_gzipped:
             gunzip_response_content(response)
 
-        replace_esi_tags(request, response)
+        dummy_replace_esi_tags(request, response)
 
         if is_gzipped:
             gzip_response_content(request, response)
