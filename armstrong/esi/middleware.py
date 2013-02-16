@@ -38,6 +38,7 @@ class IncludeEsiMiddleware(object):
 
 
 class DummyEsiMiddleware(object):
+    """A middleware that comments out ESI tags to remove them from the DOM."""
     def process_response(self, request, response):
         esi_status = getattr(request, '_esi', {'used': False})
         if not esi_status['used']:

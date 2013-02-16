@@ -162,50 +162,14 @@ def replace_esi_tags(request, response):
     merge_fragment_cookies(response, fragment_cookies)
 
 
-# TODO: Test this independently of the middleware
-# TODO: Reduce the lines of codes and varying functionality of this code so its
-#       tests can be reduced in complexity.
 def dummy_replace_esi_tags(request, response):
-    process_errors = getattr(settings, 'ESI_PROCESS_ERRORS', False)
-    fragment_headers = MultiValueDict()
-    fragment_cookies = []
-    request_data = {
-        'cookies': request.COOKIES,
-        'HTTP_REFERER': request.build_absolute_uri(),
-        'HTTP_X_ESI_FRAGMENT': True,
-    }
-
+    """Comments out the ESI tags in a response."""
     replacement_offset = 0
     for match in esi_tag_re.finditer(response.content):
-        url = build_full_fragment_url(request, match.group('url'))
-
-        if response.status_code == 200 or process_errors:
-            client = http_client.Client(**request_data)
-            fragment = client.get(url)
-        else:
-            fragment = HttpResponse()
-
-        if fragment.status_code != 200:
-            # Remove the error content so it isn't added to the page.
-            fragment.content = ''
-            extra = {'data': {
-                'fragment': fragment.__dict__,
-                'request': request.__dict__,
-            }}
-            log.error('ESI fragment %s returned status code %s' %
-                (url, fragment.status_code), extra=extra)
+        fragment_content = "<!--" + match.group(0)[1:-1] + "-->"
 
         start = match.start() + replacement_offset
         end = match.end() + replacement_offset
         response.content = '%s%s%s' % (response.content[:start],
-            fragment.content, response.content[end:])
-        replacement_offset += len(fragment.content) - len(match.group(0))
-
-        for header in HEADERS_TO_MERGE:
-            if header in fragment:
-                fragment_headers.appendlist(header, fragment[header])
-        if fragment.cookies:
-            fragment_cookies.append(fragment.cookies)
-
-    merge_fragment_headers(response, fragment_headers)
-    merge_fragment_cookies(response, fragment_cookies)
+            fragment_content, response.content[end:])
+        replacement_offset += len(fragment_content) - len(match.group(0))
